@@ -1,0 +1,2 @@
+remotescreencapture.SliderListener
+remotescreencapture.DelaySettingDialog
