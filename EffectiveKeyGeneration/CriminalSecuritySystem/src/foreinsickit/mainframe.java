@@ -19,6 +19,9 @@ import java.util.*;
 import sun.audio.*;
 import java.applet.*;
 import java.math.*;
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
+import java.io.IOException;
 
 class mainframe extends JFrame implements ActionListener, Runnable {
 
@@ -150,7 +153,34 @@ class mainframe extends JFrame implements ActionListener, Runnable {
             System.out.println(e);
         }
     }
+    public String encode(String s, String key) {
+        return base64Encode(xorWithKey(s.getBytes(), key.getBytes()));
+    }
 
+    public String decode(String s, String key) {
+        return new String(xorWithKey(base64Decode(s), key.getBytes()));
+    }
+
+    private byte[] xorWithKey(byte[] a, byte[] key) {
+        byte[] out = new byte[a.length];
+        for (int i = 0; i < a.length; i++) {
+            out[i] = (byte) (a[i] ^ key[i%key.length]);
+        }
+        return out;
+    }
+
+    private byte[] base64Decode(String s) {
+        try {
+            BASE64Decoder d = new BASE64Decoder();
+            return d.decodeBuffer(s);
+        } catch (IOException e) {throw new RuntimeException(e);}
+    }
+
+    private String base64Encode(byte[] bytes) {
+        BASE64Encoder enc = new BASE64Encoder();
+        return enc.encode(bytes).replaceAll("\\s", "");
+
+    }
     public void Audioencrypt(String message, File file, int key) throws
             Exception {
         byte b[] = new byte[1];
@@ -158,11 +188,17 @@ class mainframe extends JFrame implements ActionListener, Runnable {
         int k, k1;
         InputStream ins = new FileInputStream(file);
         OutputStream outs = new FileOutputStream(new File("E:/pop8.wav"));
+        
         for (int c = 0; c < key; c++) {
             int ch = ins.read();
-            outs.write(ch);
+            outs.write(ch);            
         }
+
+        System.out.println(message);
+        String encoded = encode(message,String.valueOf(key));
+        message = encoded;
         int len = message.length();
+        System.out.println(message);
         byte mess[] = new byte[1];
         char chmess[] = new char[len + 1];
         k = k1 = 0;
@@ -173,7 +209,7 @@ class mainframe extends JFrame implements ActionListener, Runnable {
                 BigInteger Blen = bd.toBigInteger();
                 String Slen = Blen.toString(2);
                 char Clen[] = new char[Blen.bitLength()];
-                System.out.println(Blen.bitLength());
+//                System.out.println(Blen.bitLength());
                 Slen.getChars(0, Blen.bitLength(), Clen, 0);
                 for (int j = 0; j <= 7; j++) {
                     if (j == 0) {
@@ -182,6 +218,8 @@ class mainframe extends JFrame implements ActionListener, Runnable {
                             Abi = new BigInteger(b);
                             String Aby = Abi.toString(2);
                             int Alen = Abi.bitLength();
+//                            System.out.println("Alen"+Alen);
+//                            System.out.println("N"+ n);
                             if (b[0] < 0) {
                                 Alen++;
                             }
@@ -199,6 +237,7 @@ class mainframe extends JFrame implements ActionListener, Runnable {
                                         BigInteger bi = new BigInteger("-1", 2);
                                         BigInteger big = Abi.subtract(bi);
                                         b = big.toByteArray();
+//                                        System.out.println("Big"+big +"Abi "+Abi +"Bi "+ bi) ;
                                     }
                                 }
                                 outs.write(b);
@@ -252,6 +291,7 @@ class mainframe extends JFrame implements ActionListener, Runnable {
                 byte blen[] = slen.getBytes();
                 BigInteger Blen = new BigInteger(blen);
                 String Slen = Blen.toString(2);
+//                System.out.println("Message is "+ slen+"Blen "+Blen +"Slen " +Slen);
                 char Clen[] = new char[Blen.bitLength()];
                 Slen.getChars(0, Blen.bitLength(), Clen, 0);
                 for (int j = 0; j <= 7; j++) {
@@ -400,10 +440,13 @@ class mainframe extends JFrame implements ActionListener, Runnable {
         }
 
         String message = new String(me);
-        System.out.println(message);
-        Amessage.setText(message);
+         System.out.println(message);
+         String finalmsg =message;
+        String decoded = decode(finalmsg,String.valueOf(key));
+        finalmsg = decoded;
+        System.out.println(finalmsg);
+        Amessage.setText(finalmsg);
         ins.close();
-
     }
 
     public void actionPerformed(ActionEvent ae) {
